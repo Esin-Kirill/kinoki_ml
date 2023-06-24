@@ -1,1 +1,6 @@
+# Directories
 **/__pycache__
+**/logs
+
+# Files
+requirements_temp.txt

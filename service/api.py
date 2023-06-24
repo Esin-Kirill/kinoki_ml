@@ -1,33 +1,32 @@
-from fastapi import FastAPI
 import uvicorn
+from fastapi import FastAPI
 from db import KMongoDb
-from service import calculate_top_films
-from service import get_user_recommendations, get_film_recommendations
+from service import calculate_top_films, calculate_user_recommendations
+from service import get_user_recommendations
 
 api = FastAPI()
 mongo_db = KMongoDb('test_db')
 ml_model = 0
 
-
-@api.get('/recommend/user')
-def recommend_for_user(user_id:str):
-    films = get_user_recommendations(mongo_db, user_id)
-    return films
-
-
-@api.get('/recommend/film')
-def recommend_for_film(film_id:str):
-    films = get_film_recommendations(mongo_db, film_id)
-    return film_id
-
-
 # Пересчитываем средний рейтинг фильмов
 # Результат складываем в отдельную коллекцию
-@api.post('/calculate/top')
-def calculate_film_rating():
+@api.post('/calculate/top/films')
+def api_calculate_top_films():
     response = calculate_top_films(mongo_db)
     return response
 
+# Пересчитываем рекомендации для пользователей
+# Результат складываем в отдельную коллекцию
+@api.post('/calculate/user/recommendations')
+def api_calculate_top_films():
+    response = calculate_user_recommendations(mongo_db)
+    return response
+
+# Получаем рекомендации для пользователей
+@api.get('/recommend/user')
+def api_recomend_for_user(user_id:str):
+    films = get_user_recommendations(mongo_db, user_id)
+    return films
 
 if __name__ == "__main__":
     uvicorn.run("api:api")
