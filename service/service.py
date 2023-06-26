@@ -16,6 +16,7 @@ def return_request_like_response(function):
             response['data'] = function(*args, **kwargs)
         except Exception as err:
             response['status_code'] = 500
+            err = f"ERROR IN {__import__(function.__module__).__name__}.py -> {function.__name__}: {str(err)}"
             response['text'] = err
         
         return response
@@ -62,16 +63,19 @@ def calculate_user_recommendations(mongo_db):
 def get_user_recommendations(mongo_db, user_id):
     """
         Получаем Id юзера, смотрим кол-во фильмов, кт он лайкнул или указал рейтинг.
-        - Если это кол-во < DEFAULT_USER_ACTIVITY_LIMIT -> рекомендуем "топ" фильмы
+        - Если это кол-во < DEFAULT_USER_ACTIVITY_LIMIT или нам особо нечего ему рекомендовать -> рекомендуем "топ" фильмы
         - Если это кол-во >= DEFAULT_USER_ACTIVITY_LIMIT -> подключаем модель и рекомендуем через неё.
     """
 
     find_query = {"userId":user_id}
     select_query = {"filmId":1, "_id":False}
     user_likes = mongo_db.count_records(MONGO_FILMS_LIKES_TABLE, find_query)
-    user_recommendations = mongo_db.count_records(MONGO_USER_RECOMS_TABLE, find_query)
+    user_ratings = mongo_db.count_records(MONGO_FILMS_RATINGS_TABLE, find_query)
+    user_activity = user_likes + user_ratings # Считаем пользовательскую активность
 
-    if user_likes < DEFAULT_USER_ACTIVITY_LIMIT or user_recommendations <= 5:
+    user_recommendations = mongo_db.count_records(MONGO_USER_RECOMS_TABLE, find_query) # Смотрим, а есть ли нам чё рекомендовать вообще
+
+    if user_activity < DEFAULT_USER_ACTIVITY_LIMIT or user_recommendations < 5:
 
         watched_films = mongo_db.get_records(MONGO_FILMS_LIKES_TABLE, find_query, select_query)
         watched_films = [doc.get("filmId") for doc in watched_films]

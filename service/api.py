@@ -25,8 +25,8 @@ def api_calculate_top_films():
 # Получаем рекомендации для пользователей
 @api.get('/recommend/user')
 def api_recomend_for_user(user_id:str):
-    films = get_user_recommendations(mongo_db, user_id)
-    return films
+    response = get_user_recommendations(mongo_db, user_id)
+    return response
 
 if __name__ == "__main__":
     uvicorn.run("api:api")
