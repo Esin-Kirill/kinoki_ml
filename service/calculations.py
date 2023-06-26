@@ -1,11 +1,12 @@
 import pandas as pd
+import math
 from sklearn.metrics.pairwise import pairwise_distances
 from config import DEFAULT_TOP_RATING, DEFAULT_COSINE_LIMIT, DAFAULT_FILM_MISSED_RATING
 
 
 def get_film_rating(film, key):
     rating = film.get(key, 0)/10 if key == 'ratingGoodReview' else film.get(key, 0)
-    rating = DAFAULT_FILM_MISSED_RATING if rating == 0 else rating
+    rating = DAFAULT_FILM_MISSED_RATING if rating == 0 or math.isnan(rating) else rating
     return rating
 
 
