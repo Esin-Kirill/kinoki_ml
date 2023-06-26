@@ -23,7 +23,7 @@ def return_request_like_response(function):
     return make_request_like_response
 
 
-# @return_request_like_response
+@return_request_like_response
 def calculate_top_films(mongo_db):
     """
         Рассчитываем средний рейтинг фильма за всё время
@@ -44,7 +44,7 @@ def calculate_top_films(mongo_db):
     mongo_db.insert_records(MONGO_FILMS_TOP_TABLE, films, delete_records=True)
 
 
-# @return_request_like_response
+@return_request_like_response
 def calculate_user_recommendations(mongo_db):
     """
         Подготавливаем рекомендации для пользователей.
@@ -58,7 +58,7 @@ def calculate_user_recommendations(mongo_db):
     mongo_db.insert_records(MONGO_USER_RECOMS_TABLE, user_recommendations, delete_records=True)
 
 
-# @return_request_like_response
+@return_request_like_response
 def get_user_recommendations(mongo_db, user_id):
     """
         Получаем Id юзера, смотрим кол-во фильмов, кт он лайкнул или указал рейтинг.
