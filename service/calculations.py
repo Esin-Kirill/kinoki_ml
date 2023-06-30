@@ -1,22 +1,36 @@
 import pandas as pd
 from sklearn.metrics.pairwise import pairwise_distances
-from config import DEFAULT_TOP_RATING, DEFAULT_COSINE_LIMIT
+from config import DEFAULT_TOP_RATING, DEFAULT_COSINE_LIMIT, DAFAULT_FILM_MISSED_RATING
+
+
+def get_film_rating(film, key):
+    rating = film.get(key, 0)/10 if key == 'ratingGoodReview' else film.get(key, 0)
+    rating = DAFAULT_FILM_MISSED_RATING if rating == 0 else rating
+    return rating
 
 
 def prepare_top_films(films):
-     # Находим средний рейтинг
-    df = pd.DataFrame(films)
-    df['filmId'] = df['_id']
-    df['meanRating'] = df['rating'] + df['ratingFilmCritics'] + df['ratingGoodReview']/10 + df['ratingImdb'] + df['ratingKinopoisk']
-    df['meanRating'] /= 5
+    top_films = []
+    rating_keys = ['rating', 'ratingFilmCritics', 'ratingGoodReview', 'ratingImdb', 'ratingKinopoisk']
+    rating_keys_length = len(rating_keys)
 
-    df = df[df["meanRating"] >= DEFAULT_TOP_RATING][["filmId", "meanRating"]]
-    films = df.to_dict('records') # Приводим датафрейм к виду списка словарей
+    # Решил делать не через пандас, а через словари, 
+    # т.к. по времени это в 2 раза быстрее выходит
+    for film in films:
+        film['meanRating'] = 0
+        for key in rating_keys:
+            film['meanRating'] += get_film_rating(film, key)
 
-    return films
+        film['meanRating'] /= rating_keys_length
+        if film['meanRating'] >= DEFAULT_TOP_RATING:
+            top_film = {'filmId': film.get('_id'), 'meanRating': film.get('meanRating')}
+            top_films.append(top_film)
+
+    return top_films
 
 
 def prepare_user_recommendations(user_ratings, user_likes):
+    # Тут через пандас, потому что через словари будет намного больше кода :)))
     # Собираем данные по рейтингам
     df_rating = pd.DataFrame(user_ratings)
     df_rating = df_rating.rename(columns={'rating':'state'})
