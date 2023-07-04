@@ -86,9 +86,9 @@ def prepare_user_recommendations(user_ratings, user_likes):
     user_similarity = user_similarity.to_dict('records')
 
     # Группируем фильмы по пользователям, которые их лайкнули
-    liked_films = df_all[df_all['state']==1].groupby('userId')['filmId'].agg(lambda x: list(set(x))).to_dict()
-    disliked_films = df_all[df_all['state']==0].groupby('userId')['filmId'].agg(lambda x: list(set(x))).to_dict()    
-
+    liked_films = df_all[df_all['state']>=1].groupby('userId')['filmId'].agg(lambda x: list(set(x))).to_dict()
+    disliked_films = df_all[df_all['state']<=0].groupby('userId')['filmId'].agg(lambda x: list(set(x))).to_dict()  
+    
     # Находим похожих друг на друга юзеров
     list_user_matches = []
     for user in user_similarity:
@@ -99,7 +99,7 @@ def prepare_user_recommendations(user_ratings, user_likes):
         
         user_liked_films = liked_films.get(user_id, [])
         user_disliked_films = disliked_films.get(user_id, [])
-        user_match['films'] = [film for user in user_match['users'] for film in liked_films.get(user)]
+        user_match['films'] = [film_id for user_id in user_match['users'] for film_id in liked_films.get(user_id, [])]
         user_match['recommended_films'] = list(set(user_match['films'])-set(user_liked_films)-set(user_disliked_films))
 
         del user_match['users']
