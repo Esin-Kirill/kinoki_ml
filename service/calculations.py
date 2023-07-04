@@ -1,11 +1,12 @@
 import pandas as pd
+import math
 from sklearn.metrics.pairwise import pairwise_distances
 from config import DEFAULT_TOP_RATING, DEFAULT_COSINE_LIMIT, DAFAULT_FILM_MISSED_RATING
 
 
 def get_film_rating(film, key):
     rating = film.get(key, 0)/10 if key == 'ratingGoodReview' else film.get(key, 0)
-    rating = DAFAULT_FILM_MISSED_RATING if rating == 0 else rating
+    rating = DAFAULT_FILM_MISSED_RATING if rating == 0 or math.isnan(rating) else rating
     return rating
 
 
@@ -28,19 +29,43 @@ def prepare_top_films(films):
 
     return top_films
 
+def map_user_rating(rating):
+    if rating > 8:
+        state = 2
+    elif rating > 6:
+        state = 1
+    elif rating > 4:
+        state = 0
+    else:
+        state = -1
+        
+    return state
+
+
+def map_user_likes(row):
+    if row['state'] == 'LIKE' and row['listCode'] == 'WATCHED':
+        state = 2
+    elif row['state'] == 'LIKE':
+        state = 1
+    elif row['state'] == 'DISLIKE' and row['listCode'] == 'WATCHED':
+        state = -1
+    elif row['state'] == 'DISLIKE':
+        state = 0
+    return state
+
 
 def prepare_user_recommendations(user_ratings, user_likes):
     # Тут через пандас, потому что через словари будет намного больше кода :)))
     # Собираем данные по рейтингам
     df_rating = pd.DataFrame(user_ratings)
     df_rating = df_rating.rename(columns={'rating':'state'})
-    df_rating['state'] = df_rating['state'].apply(lambda x: 1 if x >= 6 else 0)
+    df_rating['state'] = df_rating['state'].apply(map_user_rating)
 
     # Собираем данные по лайкам
     df_like = pd.DataFrame(user_likes)
     df_like['userId'] = df_like['userId'].fillna(df_like['anonymousId']) 
     df_like = df_like.drop('anonymousId', axis=1) #Можно триггерить юзеров зарегаться, чтобы получать рекомендации :)
-    df_like['state'] = df_like['state'].map({'LIKE':1, 'DISLIKE':0})
+    df_like['state'] = df_like.apply(map_user_likes, axis=1)
 
     # Объединяем данные вместе
     df_all = pd.concat([df_like, df_rating], axis=0)
