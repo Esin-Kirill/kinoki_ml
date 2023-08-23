@@ -1,6 +1,9 @@
 ### MONGO
 MONGO_DB = 'movie-gram'
 MONGO_CONNECTION_STRING = "localhost:27017"
+MONGO_CONNECTION_URI = "mongodb://root:pass@localhost:27017"
+MONGO_CONNECTION_LOGIN = "root"
+MONGO_CONNECTION_PASS = "pass"
 MONGO_FILMS_TABLE = "film"
 MONGO_FILMS_LIKES_TABLE = "like_dislike"
 MONGO_FILMS_RATINGS_TABLE = "film_user_rating"

@@ -61,4 +61,4 @@ def api_recomend_for_user(user_id:str):
 
 if __name__ == "__main__":
     logging.info('Starting...')
-    uvicorn.run("api:api", log_config=log_config)
+    uvicorn.run("api:api", log_config=log_config, port=8082)

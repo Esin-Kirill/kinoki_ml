@@ -1,5 +1,4 @@
 from random import shuffle
-import logging
 from config import *
 from calculations import *
 
