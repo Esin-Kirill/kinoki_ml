@@ -5,8 +5,8 @@ import logging
 from fastapi import FastAPI
 from datetime import datetime
 from db import KMongoDb
-from service import calculate_top_films, calculate_user_recommendations
-from service import get_user_recommendations
+from service_ml import calculate_top_films
+from service_ml import calculate_recommendations_one, calculate_recommendations_all
 from config import MONGO_DB, LOGGIN_LEVEL
 
 # Set others loggers level
@@ -35,10 +35,12 @@ with open(os.path.abspath('uvicorn_log_config.json'), 'r') as config_json:
 api = FastAPI()
 mongo_db = KMongoDb(MONGO_DB)
 
+
 # Пересчитываем средний рейтинг фильмов
 # Результат складываем в отдельную коллекцию
 @api.post('/calculate/top/films')
 def api_calculate_top_films():
+    logging.info('Calculate top films')
     response = calculate_top_films(mongo_db)
     logging.debug(f'Response: {response}')
     return response
@@ -46,16 +48,17 @@ def api_calculate_top_films():
 # Пересчитываем рекомендации для пользователей
 # Результат складываем в отдельную коллекцию
 @api.post('/calculate/user/recommendations')
-def api_calculate_user_recommendations():
-    response = calculate_user_recommendations(mongo_db)
+def api_calculate_recommendations_all():
+    logging.info('Calculate recommendations for all users')
+    response = calculate_recommendations_all(mongo_db)
     logging.debug(f'Response: {response}')
     return response
 
 # Получаем рекомендации для пользователей
-@api.get('/recommend/user')
-def api_recomend_for_user(user_id:str):
-    logging.debug(f'Get recommendations for user: {user_id}')
-    response = get_user_recommendations(mongo_db, user_id)
+@api.post('/calculate/user/recommendations/{user_id}')
+def api_calculate_recommendations_one(user_id:str):
+    logging.info(f'Calculate recommendations for one user: {user_id}')
+    response = calculate_recommendations_one(mongo_db, user_id)
     logging.debug(f'Response: {response}')
     return response
 
