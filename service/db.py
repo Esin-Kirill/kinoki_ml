@@ -1,5 +1,5 @@
 from pymongo import MongoClient
-from config import MONGO_CONNECTION_STRING, DEFAULT_TOP_LIMIT, MONGO_CONNECTION_URI
+from config import DEFAULT_TOP_LIMIT, MONGO_CONNECTION_URI
 
 class KMongoDb:
     def __init__(self, database):
