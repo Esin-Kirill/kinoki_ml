@@ -1,9 +1,11 @@
 import pandas as pd
 import logging
 import math
+from random import shuffle
 from bson.decimal128 import Decimal128
 from sklearn.metrics.pairwise import pairwise_distances
-from config import DEFAULT_TOP_RATING, DEFAULT_COSINE_LIMIT, DAFAULT_FILM_MISSED_RATING, DEFAULT_USER_ACTIVITY_LIMIT
+from config import DEFAULT_TOP_RATING, DEFAULT_COSINE_LIMIT, DEFAULT_ACTIVITY_TRIGGER_LIMIT
+from config import DAFAULT_FILM_MISSED_RATING, DEFAULT_USER_ACTIVITY_LIMIT
 
 # Logger
 logging.getLogger(__name__)
@@ -63,7 +65,7 @@ def map_user_likes(row):
 
 
 def prepare_user_activity(user_ratings, user_likes):
-    logging.info('Start preparing user activity')
+    logging.info('Preparing user activity')
 
     # Тут через пандас, потому что через словари будет намного больше кода :)))
     # Собираем данные по рейтингам
@@ -76,26 +78,34 @@ def prepare_user_activity(user_ratings, user_likes):
     # Собираем данные по лайкам
     df_like = pd.DataFrame(user_likes)
     if len(df_like) > 0:
-        df_like['userId'] = df_like['userId'].fillna(df_like['anonymousId']) 
-        df_like = df_like.drop('anonymousId', axis=1)
+        if 'anonymousId' in df_like.columns and 'userId' in df_like.columns:
+            df_like['userId'] = df_like['userId'].fillna(df_like['anonymousId']) 
+            df_like = df_like.drop('anonymousId', axis=1)
+        elif 'anonymousId' in df_like.columns and 'userId' not in df_like.columns:
+            df_like['userId'] = df_like['anonymousId']
+            df_like = df_like.drop('anonymousId', axis=1)
         df_like['state'] = df_like.apply(map_user_likes, axis=1)
     logging.info(f'Collected user_likes: {len(df_like)}')
 
     # Объединяем данные вместе
-    df_all = pd.concat([df_like, df_rating], axis=0)
-    df_all = df_all[['userId', 'filmId', 'state']]
-    logging.info(f'Unioned data: {len(df_all)}')
+    if len(df_like) > 0 or len(df_rating) > 0:
+        df_all = pd.concat([df_like, df_rating], axis=0)
+        df_all = df_all[['userId', 'filmId', 'state']]
+        logging.info(f'Unioned data: {len(df_all)}')
 
-    # Исключаем пользователей, у которых меньше DEFAULT_USER_ACTIVITY_LIMIT оценок\лайков фильмов
-    less_active_users = df_all.groupby('userId')['filmId'].count()
-    less_active_users = [user for user, likes in less_active_users.items() if likes < DEFAULT_USER_ACTIVITY_LIMIT]
-    df_user_activity = df_all[~df_all['userId'].isin(less_active_users)]
+        # Исключаем пользователей, у которых меньше DEFAULT_USER_ACTIVITY_LIMIT оценок\лайков фильмов
+        less_active_users = df_all.groupby('userId')['filmId'].count()
+        less_active_users = [user for user, likes in less_active_users.items() if likes < DEFAULT_USER_ACTIVITY_LIMIT]
+        df_user_activity = df_all[~df_all['userId'].isin(less_active_users)]
 
-    logging.info(f'After filtering less active: {len(df_user_activity)}')
-    return df_user_activity
+        logging.info(f'After filtering less active: {len(df_user_activity)}')
+        return df_user_activity
+    else:
+        logging.info('No user_activity')
+        return pd.DataFrame()
 
 
-def prepare_user_recommendations(df_user_activity, user_id=None):
+def prepare_user_recommendations(df_user_activity, user_id=None, top_films=None):
     logging.info('Start preparing user recommendations')
 
     # Вычисляем разряженную матрицу: в строках userId, в столбцах filmId, в значениях 1\0 (в зависимости от оценки)
@@ -139,6 +149,16 @@ def prepare_user_recommendations(df_user_activity, user_id=None):
             # Вытаскиевам фильмы похожих пользователей и убираем фильмы, кт юзер уже смотрел или лайкнул
             user_recommended_films = [film_id for user_id in similar_users for film_id in liked_films.get(user_id, [])]
             user_recommended_films = set(user_recommended_films) - user_liked_films - user_disliked_films
+            if user_id:
+                logging.info(f'Got {len(user_recommended_films)} recommendations for {current_user_id}')
+
+            recoms_len = len(user_recommended_films)
+            if top_films and recoms_len < DEFAULT_ACTIVITY_TRIGGER_LIMIT:
+                shuffle(top_films)
+                user_top_films = list(set(top_films) - user_liked_films - user_disliked_films)
+                user_top_films = set(user_top_films[:50-recoms_len])
+                user_recommended_films = user_recommended_films ^ user_top_films
+
             dict_user_recommendations[current_user_id] = [user_recommended_films]
 
     logging.info('Done finding similar users and films')

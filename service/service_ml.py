@@ -76,7 +76,10 @@ def calculate_recommendations_all(mongo_db):
 
     ### RECOMMENDATIONS
     # Make user recommendations
-    dict_users_recommendations = prepare_user_recommendations(df_users_activity)
+    select_query = {"filmId": 1, "_id": 0}
+    top_films = mongo_db.get_records(MONGO_USER_ACTIVITY_TABLE, select_query=select_query)
+    top_films = [film.get('filmId') for film in top_films]
+    dict_users_recommendations = prepare_user_recommendations(df_users_activity, top_films=top_films)
     logging.info('Got similar users and films')
 
     # Get films
@@ -103,11 +106,20 @@ def calculate_recommendations_one(mongo_db, user_id):
     """
 
     # Find certain user likes & ratings
+    # Ищем сначала по userId
     find_query = {"userId": user_id}
     user_ratings = mongo_db.get_records(MONGO_FILMS_RATINGS_TABLE, find_query=find_query)
     user_likes = mongo_db.get_sorted_limited_records(MONGO_FILMS_LIKES_TABLE, find_query=find_query, sort_field="updatedAt", limit=DEFAULT_ACTIVITY_TRIGGER_LIMIT)
 
-    df_one_user_activity = prepare_user_activity(user_ratings, user_likes)
+    # Потом по anonymousId
+    find_query = {"anonymousId": user_id}
+    anonymus_ratings = mongo_db.get_records(MONGO_FILMS_RATINGS_TABLE, find_query=find_query)
+    anonymus_likes = mongo_db.get_sorted_limited_records(MONGO_FILMS_LIKES_TABLE, find_query=find_query, sort_field="updatedAt", limit=DEFAULT_ACTIVITY_TRIGGER_LIMIT)
+
+    # И эти данные объединяем
+    df_user_activity = prepare_user_activity(user_ratings, user_likes)
+    df_anonymus_activity = prepare_user_activity(anonymus_ratings, anonymus_likes)
+    df_one_user_activity = pd.concat([df_user_activity, df_anonymus_activity])
     logging.info(f'Got user activity: {len(df_one_user_activity)}')
 
     # Get all users activity
@@ -120,7 +132,10 @@ def calculate_recommendations_one(mongo_db, user_id):
     logging.info(f'Got all users activity: {len(df_users_activity)}')
 
     # Make recommendations
-    user_recommendations = prepare_user_recommendations(df_users_activity, user_id)
+    select_query = {"filmId": 1, "_id": 0}
+    top_films = mongo_db.get_records(MONGO_USER_ACTIVITY_TABLE, select_query=select_query)
+    top_films = [film.get('filmId') for film in top_films]
+    user_recommendations = prepare_user_recommendations(df_users_activity, user_id, top_films)
     logging.info('Got similar users and films')
 
     # Get films
