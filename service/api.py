@@ -24,11 +24,11 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 
-# Deal with unicorn logging level
-with open(os.path.abspath('uvicorn_log_config.json'), 'r') as config_json:
-    log_config = uvicorn.config.LOGGING_CONFIG
-    log_config = json.loads(config_json.read())
-    log_config['handlers']['file']['filename'] = file_log
+# # Deal with unicorn logging level
+# with open(os.path.abspath('./uvicorn_log_config.json'), 'r') as config_json:
+#     log_config = uvicorn.config.LOGGING_CONFIG
+#     log_config = json.loads(config_json.read())
+#     log_config['handlers']['file']['filename'] = file_log
 
 
 # API
@@ -64,4 +64,5 @@ def api_calculate_recommendations_one(user_id:str):
 
 if __name__ == "__main__":
     logging.info('Starting...')
-    uvicorn.run("api:api", log_config=log_config, port=8082)
+    # uvicorn.run("api:api", log_config=log_config, host="0.0.0.0", port=8080)
+    uvicorn.run("api:api", host="0.0.0.0", port=8080)
