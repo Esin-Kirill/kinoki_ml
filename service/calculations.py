@@ -124,7 +124,7 @@ def prepare_user_recommendations(df_user_activity, user_id=None):
         
         # Если одним методом ничё не нашли -> идём искать другим
         similar_users = [key for key, value in user_similarity.items() if 0.01 <= value <= DEFAULT_COSINE_LIMIT]
-        if len(similar_users) == 0:
+        if len(similar_users) <= 3:
             df_matrix = pd.pivot_table(df_user_activity, index='filmId', columns='userId', values='state', aggfunc='sum')
             df_matrix = df_matrix.fillna(0).reset_index()
 
