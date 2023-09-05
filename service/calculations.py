@@ -39,13 +39,21 @@ def prepare_top_films(films):
     return top_films
 
 
+# def map_user_likes(row):
+#     if row['state'] == 'LIKE' and row.get('listCode') == 'WATCHED':
+#         state = 2
+#     elif row['state'] == 'LIKE':
+#         state = 1
+#     elif row['state'] == 'DISLIKE' and row.get('listCode') == 'WATCHED':
+#         state = -2
+#     elif row['state'] == 'DISLIKE':
+#         state = -1
+#     return state
+
+
 def map_user_likes(row):
-    if row['state'] == 'LIKE' and row.get('listCode') == 'WATCHED':
-        state = 2
-    elif row['state'] == 'LIKE':
+    if row['state'] == 'LIKE':
         state = 1
-    elif row['state'] == 'DISLIKE' and row.get('listCode') == 'WATCHED':
-        state = -2
     elif row['state'] == 'DISLIKE':
         state = -1
     return state
