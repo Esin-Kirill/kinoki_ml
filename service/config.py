@@ -18,9 +18,9 @@ MONGO_CONNECTION_URI = f"mongodb://{MONGO_CONNECTION_LOGIN}" \
                        f":{MONGO_CONNECTION_PASS}@{MONGO_CONNECTION_HOST}:{MONGO_CONNECTION_PORT}"
 MONGO_FILMS_TABLE = "film"
 MONGO_FILMS_LIKES_TABLE = "like_dislike"
-MONGO_USER_RECOMS_TABLE = "user_recommendations"
-MONGO_FILMS_TOP_TABLE = "film_top"
-MONGO_USER_ACTIVITY_TABLE = "user_activity"
+MONGO_USER_RECOMS_TABLE = "ml_user_recommendations"
+MONGO_FILMS_TOP_TABLE = "ml_film_top"
+MONGO_USER_ACTIVITY_TABLE = "ml_user_activity"
 
 ### SERVICE
 DEFAULT_TOP_LIMIT = 20

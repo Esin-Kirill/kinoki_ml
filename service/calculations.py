@@ -33,7 +33,7 @@ def prepare_top_films(films):
 
         film['meanRating'] /= rating_keys_length
         if film['meanRating'] >= DEFAULT_TOP_RATING:
-            top_film = {'filmId': str(film.get('_id')), 'meanRating': film.get('meanRating')}
+            top_film = {'filmId': film.get('_id'), 'meanRating': film.get('meanRating')}
             top_films.append(top_film)
 
     return top_films
