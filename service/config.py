@@ -3,9 +3,9 @@ MONGO_DB = 'movie-gram'
 MONGO_CONNECTION_STRING = "localhost:27017"
 MONGO_FILMS_TABLE = "film"
 MONGO_FILMS_LIKES_TABLE = "like_dislike"
-MONGO_USER_RECOMS_TABLE = "user_recommendations"
-MONGO_FILMS_TOP_TABLE = "film_top"
-MONGO_USER_ACTIVITY_TABLE = "user_activity"
+MONGO_USER_RECOMS_TABLE = "ml_user_recommendations"
+MONGO_FILMS_TOP_TABLE = "ml_film_top"
+MONGO_USER_ACTIVITY_TABLE = "ml_user_activity"
 
 ### SERVICE
 DEFAULT_TOP_LIMIT = 20

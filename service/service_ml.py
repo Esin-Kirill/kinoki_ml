@@ -117,7 +117,7 @@ def calculate_recommendations_one(user_id):
     user_likes = mongo_db.get_sorted_limited_records(MONGO_FILMS_LIKES_TABLE, 
                                                     find_query=find_query, 
                                                     sort_field="updatedAt", 
-                                                    limit=DEFAULT_ACTIVITY_TRIGGER_LIMIT)
+                                                    limit=DEFAULT_ACTIVITY_TRIGGER_LIMIT*3)
     df_one_user_activity = prepare_user_activity(user_likes)
     logging.info(f'Got user activity: {len(df_one_user_activity)}')
 
