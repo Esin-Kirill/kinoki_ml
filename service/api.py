@@ -1,9 +1,9 @@
-import os
-import json
+# import os
+# import json
 import uvicorn
 import logging
 from fastapi import FastAPI
-from datetime import datetime
+# from datetime import datetime
 from service_ml import calculate_top_films
 from service_ml import calculate_recommendations_one, calculate_recommendations_all
 from config import LOGGIN_LEVEL
@@ -13,18 +13,18 @@ for _ in logging.root.manager.loggerDict:
     logging.getLogger(_).setLevel(logging.INFO)
 
 # Loger configs
-file_log = f"ml_service_log_{datetime.now().strftime('%Y-%m-%d')}.log"
-file_handler = logging.FileHandler(file_log, 'a', encoding='utf-8')
+# file_log = f"ml_service_log_{datetime.now().strftime('%Y-%m-%d')}.log"
+# file_handler = logging.FileHandler(file_log, 'a', encoding='utf-8')
 stream_handler = logging.StreamHandler()
 logging.basicConfig(
-    handlers=[file_handler, stream_handler], 
+    handlers=[stream_handler],
     level=logging.DEBUG if LOGGIN_LEVEL == 'DEBUG' else logging.INFO,
     format='[%(asctime)s: %(levelname)s] %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 
-# # Deal with unicorn logging level
-# with open(os.path.abspath('./uvicorn_log_config.json'), 'r') as config_json:
+# Deal with unicorn logging level
+# with open(os.path.abspath('uvicorn_log_config.json'), 'r') as config_json:
 #     log_config = uvicorn.config.LOGGING_CONFIG
 #     log_config = json.loads(config_json.read())
 #     log_config['handlers']['file']['filename'] = file_log
@@ -62,5 +62,4 @@ def api_calculate_recommendations_one(user_id:str):
 
 if __name__ == "__main__":
     logging.info('Starting...')
-    # uvicorn.run("api:api", log_config=log_config, host="0.0.0.0", port=8080)
     uvicorn.run("api:api", host="0.0.0.0", port=8080)
