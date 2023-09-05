@@ -15,10 +15,10 @@ def return_request_like_response(function):
     """
 
     def make_request_like_response(*args, **kwargs):
-        response = {'status_code':200, 'text':'OK', 'data':None}
+        response = {'status_code':200, 'text':'OK'}
 
         try:
-            response['data'] = function(*args, **kwargs)
+            function(*args, **kwargs)
         except Exception as err:
             response['status_code'] = 500
             err = f"ERROR IN {__import__(function.__module__).__name__}.py -> {function.__name__}: {str(err)}"
