@@ -28,8 +28,8 @@ class KMongoDb:
 
     def get_sorted_limited_records(self, 
             collection, 
-            sort_query, 
-            ascending=False, 
+            sort_field,
+            ascending=False,
             find_query={}, 
             select_query=None, 
             limit=DEFAULT_TOP_LIMIT):
@@ -37,15 +37,15 @@ class KMongoDb:
         ascending = 1 if True else -1
         
         if select_query:
-            records = self.database[collection].find(find_query, select_query).sort(sort_query, ascending).limit(limit)
+            records = self.database[collection].find(find_query, select_query).sort(sort_field, ascending).limit(limit)
         else:
-            records = self.database[collection].find(find_query).sort(sort_query, ascending).limit(limit)
+            records = self.database[collection].find(find_query).sort(sort_field, ascending).limit(limit)
 
         return records
 
 
-    def insert_records(self, collection, records, delete_records=False):
+    def insert_records(self, collection, records, delete_records=False, delete_query={}):
         if delete_records:
-            self.database[collection].delete_many({})
+            self.database[collection].delete_many(delete_query)
 
         self.database[collection].insert_many(records)
