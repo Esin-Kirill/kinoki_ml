@@ -141,7 +141,7 @@ def prepare_user_recommendations(df_user_activity, user_id=None):
 
             user_similarity = other_users.corrwith(one_user).to_dict()
             user_similarity = dict(sorted(user_similarity.items(), reverse=True, key=lambda x: x[1]))
-            user_similarity = {key:DEFAULT_COSINE_LIMIT for key in list(user_similarity.keys())[:10]}
+            user_similarity = {key:DEFAULT_COSINE_LIMIT for key in list(user_similarity.keys())[:50]}
             logging.debug(f'{user_similarity}')
 
         user_similarity = {user_key_id: user_similarity}

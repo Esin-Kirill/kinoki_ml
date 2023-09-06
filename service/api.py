@@ -17,7 +17,7 @@ for _ in logging.root.manager.loggerDict:
 # file_handler = logging.FileHandler(file_log, 'a', encoding='utf-8')
 stream_handler = logging.StreamHandler()
 logging.basicConfig(
-    handlers=[stream_handler], 
+    handlers=[stream_handler],
     level=logging.DEBUG if LOGGIN_LEVEL == 'DEBUG' else logging.INFO,
     format='[%(asctime)s: %(levelname)s] %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S'
@@ -32,6 +32,7 @@ logging.basicConfig(
 
 # API
 api = FastAPI()
+
 
 # Пересчитываем средний рейтинг фильмов
 # Результат складываем в отдельную коллекцию
@@ -61,4 +62,4 @@ def api_calculate_recommendations_one(user_id:str):
 
 if __name__ == "__main__":
     logging.info('Starting...')
-    uvicorn.run("api:api")
+    uvicorn.run("api:api", host="0.0.0.0", port=8080)
