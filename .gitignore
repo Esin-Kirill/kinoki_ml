@@ -2,5 +2,7 @@
 **/__pycache__
 
 # Files
-requirements_temp.txt
+.env
 *.log
+docker-compose.yml
+Dockerfile
