@@ -1,8 +1,6 @@
-import math
 import pandas as pd
 import logging
 from bson import ObjectId
-from bson.decimal128 import Decimal128
 from sklearn.metrics.pairwise import pairwise_distances
 from config import config
 

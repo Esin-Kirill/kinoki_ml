@@ -18,16 +18,25 @@ class KMongoDb:
             self.database[collection]
 
 
-    def get_records(self, collection, find_query={}, select_query=None):
+    def get_one_record(self, collection, find_query={}, select_query=None):
+        if select_query:
+            record = self.database[collection].find_one(find_query, select_query)
+        else:
+            record = self.database[collection].find_one(find_query)
+        
+        return record
+
+
+    def get_records(self, collection, find_query={}, select_query=None, limit=10**6):
         """
             Get records from collection by queries params
         """
         if select_query:
-            records = self.database[collection].find(find_query, select_query)
+            records = self.database[collection].find(find_query, select_query).limit(limit)
         else:
-            records = self.database[collection].find(find_query)
+            records = self.database[collection].find(find_query).limit(limit)
 
-        return records
+        return list(records)
 
 
     def count_records(self, collection, find_query={}):
@@ -56,7 +65,17 @@ class KMongoDb:
         else:
             records = self.database[collection].find(find_query).sort(sort_field, ascending).limit(limit)
 
-        return records
+        return list(records)
+
+
+    def insert_one_record(self, collection, record, delete_record=False, delete_query={}):
+        """
+            Insert records with\without old records deletion
+        """
+        if delete_record:
+            self.database[collection].delete_one(delete_query)
+
+        self.database[collection].insert_one(record)
 
 
     def insert_records(self, collection, records, delete_records=False, delete_query={}):
