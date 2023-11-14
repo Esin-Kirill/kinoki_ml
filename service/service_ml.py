@@ -1,7 +1,7 @@
 import logging
 import traceback
-from config import *
-from calculations import *
+from config import config
+from calculations_user import *
 from db import KMongoDb
 
 # Logger
@@ -9,10 +9,7 @@ logging.getLogger(__name__)
 
 
 def return_request_like_response(function):
-    """
-        Декоратор.
-        Приводим формат ответа к request-like
-    """
+    """Decorator to return request-like response"""
 
     def make_request_like_response(*args, **kwargs):
         response = {'status_code':200, 'text':'OK'}
@@ -40,21 +37,21 @@ def calculate_top_films():
         предварительно очистив её от старых записей.
     """
     # Подключаемся к базе
-    mongo_db = KMongoDb(MONGO_DB)
+    mongo_db = KMongoDb(config.MONGO_DB)
 
     # Получаем фильмы
     select_query = {
-            "rating":1, "ratingFilmCritics":1, 
-            "ratingGoodReview":1, "ratingImdb":1, "ratingKinopoisk":1, 
-        }
-    films = mongo_db.get_records(MONGO_FILMS_TABLE, select_query=select_query)
+        "rating":1, "ratingFilmCritics":1, 
+        "ratingGoodReview":1, "ratingImdb":1, "ratingKinopoisk":1, 
+    }
+    films = mongo_db.get_records(config.MONGO_FILMS_TABLE, select_query=select_query)
     top_films = prepare_top_films(films)
     logging.info('Got top films')
 
-    mongo_db.create_collection(MONGO_FILMS_TOP_TABLE)
-    logging.info(f'{MONGO_FILMS_TOP_TABLE} collection created')
+    mongo_db.create_collection(config.MONGO_FILMS_TOP_TABLE)
+    logging.info(f'{config.MONGO_FILMS_TOP_TABLE} collection created')
 
-    mongo_db.insert_records(MONGO_FILMS_TOP_TABLE, top_films, delete_records=True)
+    mongo_db.insert_records(config.MONGO_FILMS_TOP_TABLE, top_films, delete_records=True)
     logging.info(f'{len(top_films)} top films inserted')
 
 
@@ -65,20 +62,20 @@ def calculate_recommendations_all():
     """
 
     # Подключаемся к базе
-    mongo_db = KMongoDb(MONGO_DB)
+    mongo_db = KMongoDb(config.MONGO_DB)
 
     ### ACTIVITY
     # Collect users activity
-    user_likes = mongo_db.get_records(MONGO_FILMS_LIKES_TABLE)
+    user_likes = mongo_db.get_records(config.MONGO_FILMS_LIKES_TABLE)
     df_user_activity = prepare_user_activity(user_likes)
     logging.info(f'Got users activity: {len(df_user_activity)}')
 
     # Insert users activity
-    mongo_db.create_collection(MONGO_USER_ACTIVITY_TABLE)
-    logging.info(f'{MONGO_USER_ACTIVITY_TABLE} collection created')
+    mongo_db.create_collection(config.MONGO_USER_ACTIVITY_TABLE)
+    logging.info(f'{config.MONGO_USER_ACTIVITY_TABLE} collection created')
 
     user_activity_records = df_user_activity.to_dict('records')
-    mongo_db.insert_records(MONGO_USER_ACTIVITY_TABLE, user_activity_records, delete_records=True)
+    mongo_db.insert_records(config.MONGO_USER_ACTIVITY_TABLE, user_activity_records, delete_records=True)
     logging.info(f'{len(user_activity_records)} users activity inserted')
 
     ### RECOMMENDATIONS
@@ -91,10 +88,10 @@ def calculate_recommendations_all():
     logging.info('Got films with user recommend for')
 
     # Insert into Mongo
-    mongo_db.create_collection(MONGO_USER_RECOMS_TABLE)
-    logging.info(f'{MONGO_USER_RECOMS_TABLE} collection created')
+    mongo_db.create_collection(config.MONGO_USER_RECOMS_TABLE)
+    logging.info(f'{config.MONGO_USER_RECOMS_TABLE} collection created')
 
-    mongo_db.insert_records(MONGO_USER_RECOMS_TABLE, user_recommendations, delete_records=True)
+    mongo_db.insert_records(config.MONGO_USER_RECOMS_TABLE, user_recommendations, delete_records=True)
     logging.info(f'{len(user_recommendations)} recommendations inserted')
 
 
@@ -104,7 +101,7 @@ def calculate_recommendations_one(user_id):
         Подготавливаем рекомендации для конкретного пользователя
     """
     # Подключаемся к базе
-    mongo_db = KMongoDb(MONGO_DB)
+    mongo_db = KMongoDb(config.MONGO_DB)
 
     # Find certain user likes & ratings
     # Ищем по userId ИЛИ anonymousId
@@ -114,10 +111,10 @@ def calculate_recommendations_one(user_id):
             {"anonymousId": ObjectId(user_id)}
         ]
     }
-    user_likes = mongo_db.get_sorted_limited_records(MONGO_FILMS_LIKES_TABLE, 
+    user_likes = mongo_db.get_sorted_limited_records(config.MONGO_FILMS_LIKES_TABLE, 
                                                     find_query=find_query, 
                                                     sort_field="updatedAt", 
-                                                    limit=DEFAULT_ACTIVITY_TRIGGER_LIMIT*3)
+                                                    limit=config.DEFAULT_ACTIVITY_TRIGGER_LIMIT*3)
     df_one_user_activity = prepare_user_activity(user_likes)
     logging.info(f'Got user activity: {len(df_one_user_activity)}')
 
@@ -128,7 +125,7 @@ def calculate_recommendations_one(user_id):
             {"anonymousId": {"$ne": ObjectId(user_id)}}
         ]
     }
-    other_users_activity = mongo_db.get_records(MONGO_USER_ACTIVITY_TABLE, find_query=find_query, select_query={"_id":0})
+    other_users_activity = mongo_db.get_records(config.MONGO_USER_ACTIVITY_TABLE, find_query=find_query, select_query={"_id":0})
 
     # Union data
     df_other_users_activity = pd.DataFrame(other_users_activity)
@@ -151,12 +148,12 @@ def calculate_recommendations_one(user_id):
                 {"anonymousId": ObjectId(user_id)}
             ]
         }
-        mongo_db.insert_records(MONGO_USER_RECOMS_TABLE, user_recommendations, delete_records=True, delete_query=delete_query)
+        mongo_db.insert_records(config.MONGO_USER_RECOMS_TABLE, user_recommendations, delete_records=True, delete_query=delete_query)
         logging.info(f'{len(user_recommendations)} recommendations for {user_id} inserted')
 
         # Insert new user activity
         one_user_activity = df_one_user_activity.to_dict('records')
-        mongo_db.insert_records(MONGO_USER_ACTIVITY_TABLE, one_user_activity, delete_records=True, delete_query=delete_query)
+        mongo_db.insert_records(config.MONGO_USER_ACTIVITY_TABLE, one_user_activity, delete_records=True, delete_query=delete_query)
         logging.info(f'{len(one_user_activity)} user activity for {user_id} inserted')
     else:
         logging.info(f'No recommendations for: {user_id} found...')

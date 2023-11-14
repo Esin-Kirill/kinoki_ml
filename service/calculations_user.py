@@ -1,24 +1,26 @@
+import math
 import pandas as pd
 import logging
-import math
 from bson import ObjectId
 from bson.decimal128 import Decimal128
 from sklearn.metrics.pairwise import pairwise_distances
-from config import DEFAULT_TOP_RATING, DEFAULT_COSINE_LIMIT, DEFAULT_ACTIVITY_TRIGGER_LIMIT
-from config import DAFAULT_FILM_MISSED_RATING, DEFAULT_ACTIVITY_TRIGGER_LIMIT
+from config import config
 
 # Logger
 logging.getLogger(__name__)
 
 
 def get_film_rating(film, key):
-    rating = float(film.get(key, Decimal128('0.0')).to_decimal())
+    """Turn Mongo Decimal128 to Python float"""
+
+    rating = float(film.get(key).to_decimal())
     rating = rating/10 if key == 'ratingGoodReview' else rating
-    rating = DAFAULT_FILM_MISSED_RATING if rating == 0 or math.isnan(rating) else rating
     return rating
 
 
 def prepare_top_films(films):
+    """Prepare top films based on their ratings"""
+
     top_films = []
     rating_keys = ['rating', 'ratingFilmCritics', 'ratingGoodReview', 'ratingImdb', 'ratingKinopoisk']
     rating_keys_length = len(rating_keys)
@@ -29,10 +31,13 @@ def prepare_top_films(films):
     for film in films:
         film['meanRating'] = 0.0
         for key in rating_keys:
-            film['meanRating'] += get_film_rating(film, key)
+            if film.get(key) is None:
+                film['meanRating'] += config.DEFAULT_FILM_MISSED_RATING
+            else:
+                film['meanRating'] += get_film_rating(film, key)
 
         film['meanRating'] /= rating_keys_length
-        if film['meanRating'] >= DEFAULT_TOP_RATING:
+        if film['meanRating'] >= config.DEFAULT_TOP_RATING:
             top_film = {'filmId': film.get('_id'), 'meanRating': film.get('meanRating')}
             top_films.append(top_film)
 
@@ -52,6 +57,8 @@ def prepare_top_films(films):
 
 
 def map_user_likes(row):
+    """Map users states to Int"""
+
     if row['state'] == 'LIKE':
         state = 1
     elif row['state'] == 'DISLIKE':
@@ -89,9 +96,9 @@ def prepare_user_activity(user_likes):
     if len(df_like) > 0:
         df_like = df_like[['uniqueId', 'userId', 'anonymousId', 'filmId', 'state']]
 
-        # Исключаем пользователей, у которых меньше DEFAULT_ACTIVITY_TRIGGER_LIMIT оценок\лайков фильмов
+        # Исключаем пользователей, у которых меньше config.DEFAULT_ACTIVITY_TRIGGER_LIMIT оценок\лайков фильмов
         less_active_users = df_like.groupby('uniqueId')['filmId'].count()
-        less_active_users = [user for user, likes in less_active_users.items() if likes < DEFAULT_ACTIVITY_TRIGGER_LIMIT]
+        less_active_users = [user for user, likes in less_active_users.items() if likes < config.DEFAULT_ACTIVITY_TRIGGER_LIMIT]
         df_user_activity = df_like[~df_like['uniqueId'].isin(less_active_users)]
         df_user_activity = df_user_activity.drop('uniqueId', axis=1)
 
@@ -131,7 +138,7 @@ def prepare_user_recommendations(df_user_activity, user_id=None):
         user_similarity = dict(zip(other_users['userId'], user_similarity_values.tolist()[0]))
         
         # Если одним методом ничё не нашли -> идём искать другим
-        similar_users = [key for key, value in user_similarity.items() if 0.01 <= value <= DEFAULT_COSINE_LIMIT]
+        similar_users = [key for key, value in user_similarity.items() if 0.01 <= value <= config.DEFAULT_COSINE_LIMIT]
         if len(similar_users) <= 3:
             df_matrix = pd.pivot_table(df_user_activity, index='filmId', columns='userId', values='state', aggfunc='sum')
             df_matrix = df_matrix.fillna(0).reset_index()
@@ -141,7 +148,7 @@ def prepare_user_recommendations(df_user_activity, user_id=None):
 
             user_similarity = other_users.corrwith(one_user).to_dict()
             user_similarity = dict(sorted(user_similarity.items(), reverse=True, key=lambda x: x[1]))
-            user_similarity = {key:DEFAULT_COSINE_LIMIT for key in list(user_similarity.keys())[:50]}
+            user_similarity = {key:config.DEFAULT_COSINE_LIMIT for key in list(user_similarity.keys())[:50]}
             logging.debug(f'{user_similarity}')
 
         user_similarity = {user_key_id: user_similarity}
@@ -162,7 +169,7 @@ def prepare_user_recommendations(df_user_activity, user_id=None):
     dict_user_recommendations = {}
 
     for current_user_id, value_dct in user_similarity.items():
-        similar_users = [key for key, value in value_dct.items() if 0.01 <= value <= DEFAULT_COSINE_LIMIT]
+        similar_users = [key for key, value in value_dct.items() if 0.01 <= value <= config.DEFAULT_COSINE_LIMIT]
 
         if bool(similar_users):
             # Берём фильмы текущего пользователя
