@@ -3,5 +3,4 @@ pymongo==3.13.0
 fastapi==0.89.1
 uvicorn==0.20.0
 scikit-learn==1.2.2
-pydantic==1.10.4
 python-dotenv==0.21.1
